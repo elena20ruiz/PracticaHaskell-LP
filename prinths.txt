@@ -1,2 +1,1 @@
-Input X1
-Print X2
+Loop (Lt X2 2)  ( (Print X2 )  (Assign X2 (Plus 2 X1) ) )

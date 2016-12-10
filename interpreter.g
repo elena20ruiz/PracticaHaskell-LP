@@ -36,70 +36,70 @@ void zzcr_attr(Attrib *attr, int type, char *text) {
     attr->text = "";
     switch (type) {
       case NUM:
-        attr->kind = "CONST";
+        attr->kind = "Const";
         attr->text = text;
       break;
       case ID:
-        attr->kind = "VAR";
+        attr->kind = "Var";
         attr->text = text;
       break;
       case INPUT:
-        attr->kind = "INPUT";
+        attr->kind = "Input";
       break;
       case PRINT:
-        attr->kind = "PRINT";
+        attr->kind = "Print";
       break;
       case ASSIG:
-        attr->kind = "ASSIGN";
+        attr->kind = "Assign";
       break;
       case SUM:
-        attr->kind = "PLUS";
+        attr->kind = "Plus";
       break;
       case REST:
-        attr->kind = "MINUS";
+        attr->kind = "Minus";
       break;
       case MULT:
-        attr->kind = "TIMES";
+        attr->kind = "Times";
       break;
       case IF:
-        attr->kind = "IF";
+        attr->kind = "If";
       break;
       case WHILE:
-        attr->kind = "WHILE";
+        attr->kind = "While";
       break;
       case EMPTY:
-        attr->kind = "STACK";
-        attr->text = "EMPTY";
+        attr->kind = "Stack";
+        attr->text = "Empty";
       break;
       case PUSH:
-        attr->kind = "STACK";
-        attr->text = "PUSH";
+        attr->kind = "Stack";
+        attr->text = "Push";
       break;
       case POP:
-        attr->kind = "STACK";
-        attr->text = "POP";
+        attr->kind = "Stack";
+        attr->text = "Pop";
       break;
       case SIZE:
-        attr->kind = "STACK";
-        attr->text = "SIZE";
+        attr->kind = "Stack";
+        attr->text = "Size";
       break;
       case AND:
-        attr->kind = "AND";
+        attr->kind = "And";
       break;
       case OR:
-        attr->kind = "OR";
+        attr->kind = "Or";
       break;
       case NOT:
-        attr->kind = "NOT";
+        attr->kind = "Not";
       break;
       case EQ:
-        attr->kind = "EQ";
+        attr->kind = "Eq";
       break;
       case GT:
-        attr->kind = "GT";
+        attr->kind = "Gt";
       break;
       case LT:
-        attr->kind = "LT";
+        attr->kind = "Lt";
       break;
       default:
         attr->kind = text;
@@ -158,55 +158,159 @@ void ASTPrintIndent(AST *a,string s)
 }
 
 
-string parseBExpr(AST *a){
-  string salida = "";
-
-  while (a!= NULL){
-
+void parseNExpr(AST *a) {
+  string tipo = a->kind;
+  string op = "Plus";
+  if(tipo == "Var" || tipo == "Const") {
+    file << a->text;
   }
-  return salida;
+  else if (tipo == "Minus") op = "Minus";
+  else if (tipo == "Times") op = "Times";
 
+  if (tipo == "Plus" || tipo =="Times" || tipo == "Minus") {
+    a = child(a,0);
+    file << op <<" ";
+    parseNExpr(a);
+    file <<" ";
+    parseNExpr(a->right);
+  }
+}
+
+void parseBExpr(AST *a){
+  string tipo = a->kind;
+  a = child(a,0);
+  if(tipo == "And") {
+    file << "AND ";
+    parseBExpr(a);
+    file << " ";
+    parseBExpr((a->right));
+  }
+  else if (tipo == "Or") {
+   file << "OR ";
+   parseBExpr(a);
+   file << " ";
+  parseBExpr(a->right);
+  }
+  else if (tipo == "Not") {
+    file << "NOT ";
+    parseBExpr(a);
+  }
+  else if (tipo == "Gt") {
+    file << "Gt ";
+    parseNExpr(a);
+    file << " ";
+    parseNExpr(a->right);
+  }
+  else if (tipo == "Eq") {
+    file << "Eq ";
+    parseNExpr(a);
+    file << " ";
+    parseNExpr(a->right);
+  }
+  else if (tipo == "Lt") {
+    file << "Lt ";
+    parseNExpr(a);
+    file << " ";
+    parseNExpr(a->right);
+  }
 
 }
 
+
+void parseStacks(AST *a) {
+  string tipo = a->text;
+  if (tipo == "Push") {
+    a = child(a,0);
+    string var = a->text;
+    file << "PUSH " << var << " (";
+    parseNExpr(a->right);
+    file << ")";
+  }
+  else if (tipo == "Pop") {
+    a = child(a,0);
+    string var = a->text;
+    string var2 = (a->right)->text;
+    file << "POP " << var << " " << var2;
+  }
+  else if (tipo == "Empty") {
+    string var = child(a,0)->text;
+    file << "EMPTY "<< var;
+  }
+  else if (tipo == "Size") {
+    string var = child(a,0)->text;
+    file << "SIZE "<< var;
+  }
+}
+
+
 void parseCommands(AST *a) {
+  AST *aux;
   while(a!=NULL) {
     string tipo = a->kind;
-    if(tipo == "INPUT") {
-        cout << "Input" << " ";
+    if(tipo == "Input") {
         file << "Input" << " ";
-        file << child(a,0)->text << endl;
+        aux = child(a,0);
+        file << aux->text;
     }
-    else if(tipo == "PRINT"){
-        cout << "Input" << " ";
+    else if(tipo == "Print"){
         file << "Print" << " ";
-        file << child(a,0)->text << endl;
+        aux = child(a,0);
+        file << aux->text;
     }
-    else if (tipo == "IF") {
-        string s = parseBExpr(child(a,0));
-        file << "Cond" << " (" << s << ") ";
+    else if (tipo == "If") {
+        file << "Cond" << " (";
+        aux = child(a,0);
+        parseBExpr(aux);
+        file << ") ";
 
         file << " (";
-        parseCommands(child(a,2));
+        aux = child((aux->right),0);
+        parseCommands(aux);
         file << ") ";
 
         if (child(a,2) != NULL) {
+          aux = aux->right;
           file << " (";
-          parseCommands(child(a,2));
+          parseCommands(aux);
           file << ") ";
         }
         file << endl;
     }
-    else if(tipo == "WHILE") {
+    else if(tipo == "While") {
+
+      file << "Loop" << " (";
+      aux = child(a,0);
+      parseBExpr(aux);
+      file << ") ";
+
+      file << " (";
+      aux = child(a,1);
+      parseCommands(aux);
+      file << ") ";
+
+
+      file << endl;
 
     }
-    else if (tipo == "STACK") {
-
+    else if (tipo == "Stack") {
+      parseStacks(a);
     }
-    else if (tipo == "ASSIG") {
-
+    else if (tipo == "Assign") {
+      file << "Assign ";
+      aux = child(a,0);
+      string s = aux->text;
+      file << s << " (";
+      parseNExpr(aux->right);
+      file << ") ";
     }
-      a = a->right;
+    else if (tipo == "list") {
+        aux = child(a,0);
+        file << " (";
+        parseCommands(aux);
+        file << ") ";
+    }
+    cout << endl;
+    a = a->right;
     }
 }
 
