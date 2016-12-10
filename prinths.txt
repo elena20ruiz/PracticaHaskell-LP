@@ -1,0 +1,2 @@
+Input X1
+Print X2
