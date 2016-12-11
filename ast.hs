@@ -2,9 +2,8 @@
 ------------------------------------------------------------------------------
 ------DATA DECLARATIONS (2.1)
 
-type Ident = String
-data Type = V | S deriving Eq
-
+type Ident = [Char]
+type Tipus = (Simple | Stack) deriving Eq
 
 data Command a =
       Assign Ident (NExpr a)
@@ -75,4 +74,107 @@ instance Show a => Show (BExpr a) where
         show(Lt a b) = concat[" ",show a,"<",show b," "]
 
 -------------------------------------------------------------------------------
---------READ (3)
+--------INTERPRET (4)
+
+--------1. DATA STACK PER A DATA TABLE
+data Stack a = [a]
+
+stack :: Stack a
+stack = Stack []
+
+push :: a -> Stack a -> Stack a
+push a (Stack s) = Stack (a:s)
+
+top :: Stack a -> a
+top (Stack s) = s!!0
+
+pop :: Stack a -> Stack a
+pop (Stack (a:s)) = Stack s
+
+size :: Stack a -> Int
+size (Stack s) = length s
+
+empty :: Stack a -> Bool
+empty (Stack []) = True
+empty (Stack a) = False
+
+--------2. Composicio SymTable--------------------------------------------------
+--------------------------------------------------------------------------------
+data FilaTable a = (Ident Tipus | Empty) deriving Show
+data SymTable a = FilaTable [a] deriving Show
+
+
+--Funcions simples de Fila Table------------------------------------------------
+filaTable:: FilaTable a
+filaTable = Empty
+
+getMaybeVar:: (FilaTable a ) -> Ident -> Maybe (a)
+getMaybeVar Empty _ = Nothing
+getMaybeVar (i t) v = if (i == val) then Just t
+                                    else Nothing
+
+getVar:: (FilaTable a) -> Ident
+getVar (i t) = i
+getVar Empty = ""
+
+setVarFila :: FilaTable a -> Ident -> Tipus -> FilaTable a
+setVarFila Empty val tip = Just (val tip)
+setVarFila (i t) val tip = if (t == tip) then (val tip) else []
+--------------------------------------------------------------------------------
+
+--Funcions per al SymTable------------------------------------------------------
+symTable:: SymTable a
+symTable = FilaTable []
+
+setVar :: SymTable a -> Ident -> Tipus -> Maybe (SymTable a)
+setVar (FilaTable []) val t = Just (FilaTable (val t))
+setVar (FilaTable a) val t
+                        | fila == [] = Just (FilaTable (val t):a)
+                        | otherwise = if ((getMaybeVar fila val) == Just(val t)) then Just (modifyFileTable a (val t))
+                                                                                 else Nothing
+
+                        where fila = filter (\x-> getVar x == val) a )
+
+getVar :: SymTable a -> Ident -> Maybe a
+getVar (FilaTable []) _ = Nothing
+getVar (FilaTable lt) val = head([(getMaybeVar x val)| x<-lt, getVar x == val])
+
+
+modifyFileTable::SymTable a -> Ident -> Tipus -> SymTable a
+modifyFileTable a val t = (filter (\x-> getVar x /= val) a)++(val t))
+--------------------------------------------------------------------------------
+
+
+
+---4.2 Evaluable Class --------------------------------------------------------
+
+class Evaluable e where
+  eval::(Num a, Ord a) => (Ident -> Maybe a) -> (e a) -> (Either String a)
+  typeCheck:: (Ident->String) -> (e a) -> Bool
+
+---------Per a NExpr
+
+data NExpr a = Var Ident
+              | Const a
+              | Plus (NExpr a) (NExpr a)
+              | Minus (NExpr a) (NExpr a)
+              | Times (NExpr a) (NExpr a)
+
+
+
+instance Evaluable NExpr where
+  typeCheck (Var Ident) =
+  typeCheck Empty = --Error
+
+  eval (getVar (FilaTable a) Ident) (Functor Ident)
+                                                  | m == Nothing =
+                                                  | otherwise ---Error
+                                                  where m = (getVar (FilaTable a) Ident)
+
+--------------------------------------------------------------------------------
+
+----4.3 Interpetar--------------------------------------------------------------
+
+interpretCommand::(Num a, Ord a) => SymTable a->[a]->Command a-> ((Either String [a]),SymTable a, [a])
+
+interpretCommand (FilaTable a) ast
