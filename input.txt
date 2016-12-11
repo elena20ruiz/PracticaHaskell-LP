@@ -1,0 +1,13 @@
+INPUT X1
+INPUT Y1
+IF X1 > 0 OR X1 = 0 NOT 0 > Y1 THEN
+   Z1 := 1
+   WHILE X1 > Y1
+   DO
+      X1:= X1 - 1
+      Z1:= Z1*Z1
+   END
+ELSE
+    Z1:=0
+END
+PRINT Z1

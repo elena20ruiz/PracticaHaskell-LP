@@ -242,75 +242,91 @@ void parseStacks(AST *a) {
   }
 }
 
+AST *padre;
 
 void parseCommands(AST *a) {
   AST *aux;
   while(a!=NULL) {
     string tipo = a->kind;
     if(tipo == "Input") {
-        file << "Input" << " ";
+        file << " Input" << " ";
         aux = child(a,0);
         file << aux->text;
+
+        if (padre == NULL) file << "i" << endl;
     }
     else if(tipo == "Print"){
-        file << "Print" << " ";
+        file << " Print" << " ";
         aux = child(a,0);
         file << aux->text;
+        if (padre == NULL) file << "p"<< endl;
     }
     else if (tipo == "If") {
-        file << "Cond" << " (";
+        if(padre == NULL) padre = a;
+
+        file << " (Cond" << " (";
         aux = child(a,0);
         parseBExpr(aux);
-        file << ") ";
+        file << ")";
 
         file << " (";
-        aux = child((aux->right),0);
+        aux = aux->right;
         parseCommands(aux);
-        file << ") ";
+        file << ")";
 
-        if (child(a,2) != NULL) {
+        if (aux->right != NULL) {
           aux = aux->right;
           file << " (";
           parseCommands(aux);
-          file << ") ";
+          file << ")";
+        };
+        file << ")";
+
+        if(padre->kind == "If") {
+          file <<"i" << endl;
+          padre = NULL;
         }
-        file << endl;
     }
     else if(tipo == "While") {
-
+      if(padre == NULL) padre = a;
       file << "Loop" << " (";
       aux = child(a,0);
       parseBExpr(aux);
-      file << ") ";
+      file << ")";
 
       file << " (";
       aux = child(a,1);
       parseCommands(aux);
-      file << ") ";
+      file << ")";
 
-
-      file << endl;
+      if(padre->kind == "While") {
+        file << "w" << endl;
+        padre = NULL;
+      }
 
     }
     else if (tipo == "Stack") {
       parseStacks(a);
+      if (padre == NULL) file<< "s" << endl;
     }
     else if (tipo == "Assign") {
-      file << "Assign ";
+      file << "(Assign ";
       aux = child(a,0);
       string s = aux->text;
       file << s << " (";
       parseNExpr(aux->right);
-      file << ") ";
+      file << "))";
+
+      if (padre == NULL) file << "a"<< endl;
     }
     else if (tipo == "list") {
         aux = child(a,0);
-        file << " (";
+        file << "(";
         parseCommands(aux);
-        file << ") ";
+        file << ")";
     }
-    cout << endl;
-    a = a->right;
+    a= a->right;
+    padre = NULL;
     }
 }
 
@@ -362,7 +378,7 @@ int main() {
 
 //OPERATORS
 #token SUM "\+"
-#token MIN "\-"
+#token REST "\-"
 #token MULT "\*"
 
 //DEFINITIONS
@@ -407,7 +423,7 @@ elseelse: ELSE! program;
 
 onecondition: expression (EQ^ | LT^ | GT^) expression;
 
-multcondition: (NOT | ) onecondition (((AND^ | OR^) multcondition)| );
+multcondition: (NOT^ | ) onecondition (((AND^ | OR^) multcondition)| );
 
 expression: var ((SUM^|REST^|MULT^) expression | );
 

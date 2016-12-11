@@ -1,1 +1,13 @@
-Loop (Lt X2 2)  ( (Print X2 )  (Assign X2 (Plus 2 X1) ) )
+Input X1
+Input Y1
+Cond (OR Gt X1 0 )  ((Assign Z1 (1)) 
+Loop (Gt X1 Y1)  ( ((Assign X1 (Minus X1 1)) 
+(Assign Z1 (Times Z1 Z1)) 
+) 
+) 
+)  (Loop (Gt X1 Y1)  ( ((Assign X1 (Minus X1 1)) 
+(Assign Z1 (Times Z1 Z1)) 
+) 
+) 
+) 
+Print Z1
